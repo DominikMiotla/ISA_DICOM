@@ -97,10 +97,10 @@ class DICOM():
             print(f"Le sottocartelle presenti sono: '{sottocartelle}'")
             print(f"I file presenti sono: '{files}'")
 
-            #parametro che indica se esistono file DICOM nella cartella
+            #Parameter indicating whether DICOM files exist in the folder
             dicom_exists = 0
 
-            #Creo la output_directpry dove salvare il risultato
+            #I create the output_directory to save the result
             output_directory = cartella + "/OUTPUT"
             os.mkdir(output_directory)
 
@@ -108,31 +108,33 @@ class DICOM():
                 if file.endswith(".dcm"):
                     dicom_exists = 1
 
-                    #Percorsi file
-                    name_file = file[:-4] #elimino .dcm dal nome
-                    file_dicom_path = cartella + "/" + file
-                    file_info_path = output_directory + "/" + name_file + ".txt"
-                    file_graphic_path = output_directory + "/" + name_file + ".png"
-                    file_jpg_path = output_directory + "/" + name_file + ".jpg"
-                    file_gif_path = output_directory +"/" + name_file + ".gif"
-                    file_dcm_anonymous = output_directory +"/" + "ANONYMUS_" + file
+                    #File paths
+                    name_file = file[:-4] #I remove .dcm from the name
+                    file_paths = {
+                        "dicom": f"{cartella}/{file}",
+                        "info": f"{output_directory}/{name_file}.txt",
+                        "png": f"{output_directory}/{name_file}.png",
+                        "jpg": f"{output_directory}/{name_file}.jpg",
+                        "gif": f"{output_directory}/{name_file}.gif",
+                        "anon": f"{output_directory}/ANONYMUS_{file}"
+                        }
 
-                    ds = pydicom.dcmread(file_dicom_path)
+                    ds = pydicom.dcmread(file_paths["dicom"])
 
                     if flag_anonymous == "YES":
                         print("---Rendo il file: " + file + " anonimo")
-                        self._make_anonymus_dicom(ds,file_dcm_anonymous)
+                        self._make_anonymus_dicom(ds,file_paths["anon"])
 
                     if (0x0028, 0x0008) in ds:  # Number of Frames
                         print(f"--Il file: {file} è multi-frame")
-                        self._dicom_to_gif(ds, file_gif_path)
+                        self._dicom_to_gif(ds, file_paths["gif"])
                     else:
                         print(f"--Il file: {file} è single-frame")
-                        self._dicom_to_jpg(ds, file_jpg_path)
-                        self._dicom_to_graphic(ds, file_graphic_path)
+                        self._dicom_to_jpg(ds, file_paths["jpg"])
+                        self._dicom_to_graphic(ds, file_paths["png"])
 
-                    self._print_info(ds,file_info_path)
-        #cancello la output_directory se non sono contenuti file DICOM nella cartella
+                    self._print_info(ds,file_paths["info"])
+        #I delete the output_directory if there are no DICOM files in the folder
         if dicom_exists == 0:
             os.rmdir(output_directory)
 
@@ -216,19 +218,19 @@ def main(arguments: argparse.Namespace) -> None:
     if arguments.action == "processing":
         logging.debug("DICOM dir: %s",arguments.dicom_dir)
         logging.debug("Anonymous: %s",arguments.anonymous)
-        # Qui va la logica reale del processing
+        #This is where the actual processing logic goes
         processing_dicom = DICOM(arguments.dicom_dir, arguments.anonymous)
         processing_dicom.processing()
 
     elif arguments.action == "acquire":
         logging.debug("FD: %s",arguments.fd)
         logging.debug("Output: %s", arguments.output)
-        # Qui va la logica reale dell'acquisizione
+        #This is where the actual acquisition logic goes
 
     elif arguments.action == "compare":
         logging.debug("Image1: %s", arguments.image1)
         logging.debug("Image2: %s",arguments.image2)
-        # Qui va la logica reale della comparazione
+        #This is where the actual comparison logic goes
 
     else:
         raise ValueError(f"Unknown action {arguments.action}")
