@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dicom"
+version = "0.0.1"
+dependencies = []
+requires-python = ">=3.10"
+authors = [
+  {name = "Dominik Miotla", email = "dominik.miotla@edu.unife.it"}
+]
+maintainers = [
+  {name = "Dominik Miotla", email = "dominik.miotla@du.unife.it"}
+]
+description = "Medical image processing"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["dicom", "medical imaging", "ultrasound", "ssim"]
+
+[project.scripts]
+dicom = "dicom:main"
