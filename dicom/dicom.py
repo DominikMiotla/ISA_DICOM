@@ -1,13 +1,16 @@
+# Standard library
 import argparse
 import logging
 import os
-import sys
+from pathlib import Path
+
+# Third-party packages
 import pydicom
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
-from pathlib import Path
 
+# pylint: disable=too-few-public-methods
 class DICOM():
     """
     Classe per l’elaborazione di file DICOM.
@@ -34,19 +37,18 @@ class DICOM():
     def _is_consistent(self) -> bool:
         return self.path.is_dir()
 
-    def _print_info(self,dicom,file_name):
+    def _print_info(self, dicom, file_name):
         """
-        Defines a function that prints information about a text file.
+        Salva le informazioni di un file DICOM in un file di testo.
         """
-        f = open(file_name,"w", encoding="utf-8")
-        print(dicom,file=f)
-        f.close()
+        with open(file_name, "w", encoding="utf-8") as f:
+            print(dicom, file=f)
 
     def _dicom_to_graphic(self,dicom,file_name):
         """
         Defines a function that saves the plot as a PNG file.
         """
-        plt.imshow(dicom.pixel_array, cmap=plt.cm.gray)
+        plt.imshow(dicom.pixel_array, cmap="gray")
         plt.savefig(file_name)
 
     def _dicom_to_jpg(self,ds,file_name):
