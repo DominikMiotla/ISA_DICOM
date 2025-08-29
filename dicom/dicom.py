@@ -2,6 +2,17 @@ import argparse
 import logging
 from pathlib import Path
 
+class DICOM():
+    def __init__(self, path:Path, anonymous:bool) -> None:
+        self.path = path
+        self.anonymous = anonymous
+
+        if not self._is_consistent():
+            raise ValueError("Invalid path: expected a directory.")
+    
+    def _is_consistent(self) -> bool:
+        return self.path.is_dir()
+
 def setup_parser() -> argparse.Namespace:
     """
     Configures and returns the command-line argument parser.
@@ -81,6 +92,7 @@ def main(arguments: argparse.Namespace) -> None:
         logging.debug("DICOM dir: %s",arguments.dicom_dir)
         logging.debug("Anonymous: %s",arguments.anonymous)
         # Qui va la logica reale del processing
+        processing_dicom = DICOM(arguments.dicom_dir, arguments.anonymous)
 
     elif arguments.action == "acquire":
         logging.debug("FD: %s",arguments.fd)
