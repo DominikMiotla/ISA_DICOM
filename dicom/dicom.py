@@ -1,22 +1,145 @@
 import argparse
 import logging
+import os
+import sys
+import pydicom
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 from pathlib import Path
 
 class DICOM():
+    """
+    Classe per l’elaborazione di file DICOM.
+
+    Permette di:
+    - Estrarre e salvare informazioni testuali sui file DICOM.
+    - Convertire immagini DICOM in PNG, JPG o GIF.
+    - Anonimizzare i dati sensibili.
+
+    Parameters
+    ----------
+    path : Path
+        Directory contenente i file DICOM.
+    anonymous : bool
+        Se True, i file vengono anonimizzati.
+    """
     def __init__(self, path:Path, anonymous:bool) -> None:
         self.path = path
         self.anonymous = anonymous
 
         if not self._is_consistent():
             raise ValueError("Invalid path: expected a directory.")
-    
+
     def _is_consistent(self) -> bool:
         return self.path.is_dir()
+
+    def _print_info(self,dicom,file_name):
+        """
+        Defines a function that prints information about a text file.
+        """
+        f = open(file_name,"w", encoding="utf-8")
+        print(dicom,file=f)
+        f.close()
+
+    def _dicom_to_graphic(self,dicom,file_name):
+        """
+        Defines a function that saves the plot as a PNG file.
+        """
+        plt.imshow(dicom.pixel_array, cmap=plt.cm.gray)
+        plt.savefig(file_name)
+
+    def _dicom_to_jpg(self,ds,file_name):
+        """
+        Defines a function that saves the file in JPG format.
+        """
+        im = ds.pixel_array.astype(float)
+        rescaled_image =(np.maximum(im,0)/im.max())*255 #float pixels
+        final_image = np.uint8(rescaled_image) #integers pixels
+        final_image = Image.fromarray(final_image)
+        final_image.save(file_name)
+
+    def _dicom_to_gif(self,ds,file_name):
+        """
+        Defines a function that saves the file in GIF format.
+        """
+        time_frame = ds[0x0018,0x1063].value
+        imgs = ds.pixel_array.astype(float)
+        rescaled_images =(np.maximum(imgs,0)/imgs.max())*255 #float pixels
+        final_images = np.uint8(rescaled_images) #integers pixels
+        imgs = [Image.fromarray(img) for img in final_images]
+        imgs[0].save(file_name, save_all=True, append_images=imgs[1:], duration=time_frame, loop=0)
+
+    def _make_anonymus_dicom(self,dicom,file_name):
+        """
+        Defines a function that anonymizes a DICOM file.
+        """
+        dicom[0x0010, 0x0010].value = "Anonymous"
+        dicom[0x0010, 0x0020].value = "Anonymous"
+        dicom[0x0010, 0x0030].value = ""
+        dicom[0x0010, 0x0040].value = ""
+        dicom[0x0012, 0x0062].value = "YES"
+        dicom.save_as(file_name)
+
+    def processing(self) -> None:
+        """
+        Processes a DICOM file.
+        This function takes a DICOM file as input and performs the necessary
+        operations to extract, modify, or analyze its data.
+        """
+        dir_path = self.path
+        flag_anonymous = self.anonymous
+
+        for cartella,sottocartelle,files in os.walk(dir_path):
+            print(f"Ci troviamo nella cartella: '{cartella}'")
+            print(f"Le sottocartelle presenti sono: '{sottocartelle}'")
+            print(f"I file presenti sono: '{files}'")
+
+            #parametro che indica se esistono file DICOM nella cartella
+            dicom_exists = 0
+
+            #Creo la output_directpry dove salvare il risultato
+            output_directory = cartella + "/OUTPUT"
+            os.mkdir(output_directory)
+
+            for file in files:
+                if file.endswith(".dcm"):
+                    dicom_exists = 1
+
+                    #Percorsi file
+                    name_file = file[:-4] #elimino .dcm dal nome
+                    file_dicom_path = cartella + "/" + file
+                    file_info_path = output_directory + "/" + name_file + ".txt"
+                    file_graphic_path = output_directory + "/" + name_file + ".png"
+                    file_jpg_path = output_directory + "/" + name_file + ".jpg"
+                    file_gif_path = output_directory +"/" + name_file + ".gif"
+                    file_dcm_anonymous = output_directory +"/" + "ANONYMUS_" + file
+
+                    ds = pydicom.dcmread(file_dicom_path)
+
+                    if flag_anonymous == "YES":
+                        print("---Rendo il file: " + file + " anonimo")
+                        self._make_anonymus_dicom(ds,file_dcm_anonymous)
+
+                    if (0x0028, 0x0008) in ds:  # Number of Frames
+                        print(f"--Il file: {file} è multi-frame")
+                        self._dicom_to_gif(ds, file_gif_path)
+                    else:
+                        print(f"--Il file: {file} è single-frame")
+                        self._dicom_to_jpg(ds, file_jpg_path)
+                        self._dicom_to_graphic(ds, file_graphic_path)
+
+                    self._print_info(ds,file_info_path)
+        #cancello la output_directory se non sono contenuti file DICOM nella cartella
+        if dicom_exists == 0:
+            os.rmdir(output_directory)
+
+
 
 def setup_parser() -> argparse.Namespace:
     """
     Configures and returns the command-line argument parser.
-    
+
     Returns:
     argparse.Namespace: Namespace with the parsed arguments.
     """
@@ -93,6 +216,7 @@ def main(arguments: argparse.Namespace) -> None:
         logging.debug("Anonymous: %s",arguments.anonymous)
         # Qui va la logica reale del processing
         processing_dicom = DICOM(arguments.dicom_dir, arguments.anonymous)
+        processing_dicom.processing()
 
     elif arguments.action == "acquire":
         logging.debug("FD: %s",arguments.fd)

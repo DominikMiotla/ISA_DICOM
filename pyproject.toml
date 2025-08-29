@@ -5,7 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dicom"
 version = "0.0.1"
-dependencies = []
+dependencies = [
+    "numpy >= 1.25, < 1.30",
+    "matplotlib >= 3.7, < 4.0",
+    "pydicom >= 2.4, < 3.0",
+    "Pillow >= 10.0, < 11.0"
+]
 requires-python = ">=3.10"
 authors = [
   {name = "Dominik Miotla", email = "dominik.miotla@edu.unife.it"}
