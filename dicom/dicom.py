@@ -7,8 +7,10 @@ from pathlib import Path
 # Third-party packages
 import pydicom
 import matplotlib.pyplot as plt
-import numpy as np
 from PIL import Image
+import cv2
+import numpy as np
+from skimage.metrics import structural_similarity
 
 # pylint: disable=too-few-public-methods
 class DICOM():
@@ -69,8 +71,13 @@ class DICOM():
         imgs = ds.pixel_array.astype(float)
         rescaled_images =(np.maximum(imgs,0)/imgs.max())*255 #float pixels
         final_images = np.uint8(rescaled_images) #integers pixels
-        imgs = [Image.fromarray(img) for img in final_images]
+        # final_images is a multi-frame array with shape (N, H, W),
+        # where N is the number of frames. Iterating over it yields
+        # one 2D frame per step, so this comprehension is valid.
+        imgs = [Image.fromarray(img) for img in final_images]  # pylint: disable=E1133
         imgs[0].save(file_name, save_all=True, append_images=imgs[1:], duration=time_frame, loop=0)
+
+
 
     def _make_anonymus_dicom(self,dicom,file_name):
         """
@@ -93,9 +100,9 @@ class DICOM():
         flag_anonymous = self.anonymous
 
         for cartella,sottocartelle,files in os.walk(dir_path):
-            print(f"Ci troviamo nella cartella: '{cartella}'")
-            print(f"Le sottocartelle presenti sono: '{sottocartelle}'")
-            print(f"I file presenti sono: '{files}'")
+            logging.info("\nCi troviamo nella cartella: %s",cartella)
+            logging.info("\tLe sottocartelle presenti sono: %s",sottocartelle)
+            logging.info("\tI file presenti sono: %s",files)
 
             #Parameter indicating whether DICOM files exist in the folder
             dicom_exists = 0
@@ -122,22 +129,56 @@ class DICOM():
                     ds = pydicom.dcmread(file_paths["dicom"])
 
                     if flag_anonymous == "YES":
-                        print("---Rendo il file: " + file + " anonimo")
+                        logging.info("\t\t---Rendo il file: %s anonimo", file)
                         self._make_anonymus_dicom(ds,file_paths["anon"])
 
                     if (0x0028, 0x0008) in ds:  # Number of Frames
-                        print(f"--Il file: {file} è multi-frame")
+                        logging.info("\t\t--Il file: %s è multi-frame",file)
                         self._dicom_to_gif(ds, file_paths["gif"])
                     else:
-                        print(f"--Il file: {file} è single-frame")
+                        logging.info("\t\t--Il file: %s è single-frame",file)
                         self._dicom_to_jpg(ds, file_paths["jpg"])
                         self._dicom_to_graphic(ds, file_paths["png"])
 
                     self._print_info(ds,file_paths["info"])
-        #I delete the output_directory if there are no DICOM files in the folder
-        if dicom_exists == 0:
-            os.rmdir(output_directory)
+                    #I delete the output_directory if there are no DICOM files in the folder
+            if dicom_exists == 0:
+                os.rmdir(output_directory)
 
+def compare_image(path1:Path, path2:Path) -> None:
+    """
+    Compare two image files using Structural Similarity Index (SSIM).
+    The function validates that both inputs are `.jpg` or `.png` files,
+    converts them to grayscale, and prints a similarity score between 0.0
+    (completely different) and 1.0 (identical).
+    Args:
+        path1 (Path): First image path.
+        path2 (Path): Second image path.
+    Raises:
+        ValueError: If a path is not a valid image file.
+    """
+    valid_extensions = {'.jpg', '.png'}
+
+    # Funzione interna per verificare se un path è valido
+    def _is_valid_image(path: Path) -> bool:
+        return path.is_file() and path.suffix.lower() in valid_extensions
+
+    if not _is_valid_image(path1):
+        raise ValueError(f"{path1} It is not a valid image file.")
+    if not _is_valid_image(path2):
+        raise ValueError(f"{path2} It is not a valid image file.")
+
+    mag01 = cv2.imread(str(path1)) # pylint: disable=c-extension-no-member
+    mag02 = cv2.imread(str(path2)) # pylint: disable=c-extension-no-member
+
+    #conversione scala di grigi
+    mag01 = cv2.cvtColor(mag01, cv2.COLOR_BGR2GRAY) # pylint: disable=c-extension-no-member
+    mag02 = cv2.cvtColor(mag02, cv2.COLOR_BGR2GRAY) # pylint: disable=c-extension-no-member
+
+    (p,_) = structural_similarity(mag01,mag02, full = True)
+
+    #Indice di similarietà 1=uguali, 0=totale differenza
+    logging.info("Indice di similarità: %0.4f", p)
 
 
 def setup_parser() -> argparse.Namespace:
@@ -155,7 +196,7 @@ def setup_parser() -> argparse.Namespace:
                         required=False,
                         help="Selected verbosity",
                         choices=["NOTSET","DEBUG","INFO","WARNING","ERROR","CRITICAL"],
-                        default="ERROR")
+                        default="INFO")
 
     subparser = parser.add_subparsers(dest="action", required=True)
 
@@ -218,7 +259,6 @@ def main(arguments: argparse.Namespace) -> None:
     if arguments.action == "processing":
         logging.debug("DICOM dir: %s",arguments.dicom_dir)
         logging.debug("Anonymous: %s",arguments.anonymous)
-        #This is where the actual processing logic goes
         processing_dicom = DICOM(arguments.dicom_dir, arguments.anonymous)
         processing_dicom.processing()
 
@@ -230,7 +270,7 @@ def main(arguments: argparse.Namespace) -> None:
     elif arguments.action == "compare":
         logging.debug("Image1: %s", arguments.image1)
         logging.debug("Image2: %s",arguments.image2)
-        #This is where the actual comparison logic goes
+        compare_image(arguments.image1,arguments.image2)
 
     else:
         raise ValueError(f"Unknown action {arguments.action}")

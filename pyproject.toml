@@ -9,7 +9,9 @@ dependencies = [
     "numpy >= 1.25, < 1.30",
     "matplotlib >= 3.7, < 4.0",
     "pydicom >= 2.4, < 3.0",
-    "Pillow >= 10.0, < 11.0"
+    "Pillow >= 10.0, < 11.0",
+    "opencv-python >= 4.8, < 5.0",
+    "scikit-image >= 0.21, < 0.23"
 ]
 requires-python = ">=3.10"
 authors = [
