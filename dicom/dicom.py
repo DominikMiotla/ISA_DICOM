@@ -145,6 +145,20 @@ class DICOM():
             if dicom_exists == 0:
                 os.rmdir(output_directory)
 
+def acquire(fd:int, frame_name:Path):
+    if os.path.isdir(frame_name):
+        # Se è una directory, aggiungo un nome file di default
+        frame_name = frame_name / "frame_default.png"
+    elif frame_name.suffix == "":
+        # Se non ha estensione, assumiamo che non sia un file completo
+        frame_name = frame_name.with_suffix(".png")
+    print("Il percorso finale per salvare il frame sarà:", frame_name)
+    
+    cap_cam = cv2.VideoCapture(fd)
+    ret, frame = cap_cam.read()
+    if ret == True:
+        cv2.imwrite(str(frame_name), frame)
+
 def compare_image(path1:Path, path2:Path) -> None:
     """
     Compare two image files using Structural Similarity Index (SSIM).
@@ -224,10 +238,9 @@ def setup_parser() -> argparse.Namespace:
                            required=True,
                            help="Specifies the STDIN associated with the acquisition card")
     parser_a2.add_argument("--output",
-                           type=str,
+                           type=Path,
                            required=False,
-                           default="image",
-                           help="Image name")
+                           help="Image path")
 
     #Action 3: Comparison between two images using Structural Similarity Index (SSIM)
     parser_a3 = subparser.add_parser("compare",
@@ -265,7 +278,7 @@ def main(arguments: argparse.Namespace) -> None:
     elif arguments.action == "acquire":
         logging.debug("FD: %s",arguments.fd)
         logging.debug("Output: %s", arguments.output)
-        #This is where the actual acquisition logic goes
+        acquire(arguments.fd, arguments.output)
 
     elif arguments.action == "compare":
         logging.debug("Image1: %s", arguments.image1)
