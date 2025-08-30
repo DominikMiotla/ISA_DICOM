@@ -1,3 +1,26 @@
+"""
+Module for processing DICOM files and medical images.
+
+This module provides functionality to:
+- Extract and save metadata from DICOM files.
+- Convert DICOM images into common formats (PNG, JPG, GIF).
+- Anonymize sensitive patient data.
+- Capture frames from video devices (e.g., ultrasound).
+- Compare images using the Structural Similarity Index (SSIM).
+- Handle command-line arguments and actions via argparse.
+
+Examples
+--------
+- Process a directory of DICOM files:
+    python dicom.py processing --dicom_dir data --anonymous
+
+- Capture a frame from a device:
+    python dicom.py acquire --fd 0 --output frame.png
+
+- Compare two images:
+    python dicom.py compare --image1 img1.png --image2 img2.png
+"""
+
 # Standard library
 import argparse
 import logging
@@ -146,6 +169,9 @@ class DICOM():
                 os.rmdir(output_directory)
 
 def acquire(fd:int, frame_name:Path):
+    """
+    Capture a video frame and save it as a PNG file.
+    """
     if os.path.isdir(frame_name):
         # Se è una directory, aggiungo un nome file di default
         frame_name = frame_name / "frame_default.png"
@@ -153,10 +179,10 @@ def acquire(fd:int, frame_name:Path):
         # Se non ha estensione, assumiamo che non sia un file completo
         frame_name = frame_name.with_suffix(".png")
     print("Il percorso finale per salvare il frame sarà:", frame_name)
-    
+
     cap_cam = cv2.VideoCapture(fd)
     ret, frame = cap_cam.read()
-    if ret == True:
+    if ret:
         cv2.imwrite(str(frame_name), frame)
 
 def compare_image(path1:Path, path2:Path) -> None:
