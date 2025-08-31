@@ -132,7 +132,7 @@ class DICOM():
 
             #I create the output_directory to save the result
             output_directory = cartella + "/OUTPUT"
-            os.mkdir(output_directory)
+            os.makedirs(output_directory, exist_ok=True)
 
             for file in files:
                 if file.endswith(".dcm"):
