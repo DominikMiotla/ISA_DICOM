@@ -27,3 +27,6 @@ keywords = ["dicom", "medical imaging", "ultrasound", "ssim"]
 
 [project.scripts]
 dicom = "dicom:main"
+
+[tool.setuptools]
+packages = ["dicom"]
