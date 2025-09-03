@@ -1,6 +1,5 @@
-File_for_test
-File_for_test/File_DICOM/Paziente1/ANONYMUS_1-6.dcm
-File_for_test/File_DICOM/Paziente2/ANONYMUS_1-8.dcm
+examples/File_DICOM/Paziente1/ANONYMUS_1-6.dcm
+examples/File_DICOM/Paziente2/ANONYMUS_1-8.dcm
 # Created by https://www.toptal.com/developers/gitignore/api/python,macos,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,macos,visualstudiocode
 

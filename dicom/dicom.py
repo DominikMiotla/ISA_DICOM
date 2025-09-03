@@ -168,22 +168,37 @@ class DICOM():
             if dicom_exists == 0:
                 os.rmdir(output_directory)
 
-def acquire(fd:int, frame_name:Path):
+def acquire(source, frame_name: Path):
     """
-    Capture a video frame and save it as a PNG file.
+    Captures a frame from a video or a webcam and saves it as a PNG.
+    
+    Parameters:
+    source: int (device index) or str/Path (video file or device /dev/videoX)
+    frame_name: Path of the directory or file where the frame will be saved
     """
+
+    # Gestione nome file
     if os.path.isdir(frame_name):
-        # Se è una directory, aggiungo un nome file di default
         frame_name = frame_name / "frame_default.png"
     elif frame_name.suffix == "":
-        # Se non ha estensione, assumiamo che non sia un file completo
         frame_name = frame_name.with_suffix(".png")
-    print("Il percorso finale per salvare il frame sarà:", frame_name)
 
-    cap_cam = cv2.VideoCapture(fd)
-    ret, frame = cap_cam.read()
-    if ret:
-        cv2.imwrite(str(frame_name), frame)
+    logging.info("The final path where the frame will be saved is: %s", frame_name)
+
+    # Apri il video o la webcam
+    cap = cv2.VideoCapture(source)
+    if not cap.isOpened():
+        raise RuntimeError(f"Unable to open the source:: {source}")
+
+    ret, frame = cap.read()
+    if not ret:
+        cap.release()
+        raise RuntimeError("Unable to read the frame from the source")
+
+    # Salva il frame
+    cv2.imwrite(str(frame_name), frame)
+    cap.release()
+    logging.info("Frame successfully captured and saved!")
 
 def compare_image(path1:Path, path2:Path) -> None:
     """
@@ -218,7 +233,8 @@ def compare_image(path1:Path, path2:Path) -> None:
     (p,_) = structural_similarity(mag01,mag02, full = True)
 
     #Indice di similarietà 1=uguali, 0=totale differenza
-    logging.info("Indice di similarità: %0.4f", p)
+    logging.debug("Indice di similarità: %0.4f", p)
+    return p
 
 
 def setup_parser() -> argparse.Namespace:
@@ -261,8 +277,10 @@ def setup_parser() -> argparse.Namespace:
                                      )
     parser_a2.add_argument("--fd",
                            type=int,
-                           required=True,
                            help="Specifies the STDIN associated with the acquisition card")
+    parser_a2.add_argument("--video",
+                        type=str,
+                        help="Path to the video file")
     parser_a2.add_argument("--output",
                            type=Path,
                            required=False,
@@ -304,12 +322,19 @@ def main(arguments: argparse.Namespace) -> None:
     elif arguments.action == "acquire":
         logging.debug("FD: %s",arguments.fd)
         logging.debug("Output: %s", arguments.output)
-        acquire(arguments.fd, arguments.output)
+        if arguments.fd is not None:
+            source = arguments.fd
+        elif arguments.video is not None:
+            source = arguments.video
+        else:
+            raise ValueError("You must provide either --fd or --video as the source!")
+        acquire(source, arguments.output)
 
     elif arguments.action == "compare":
         logging.debug("Image1: %s", arguments.image1)
         logging.debug("Image2: %s",arguments.image2)
-        compare_image(arguments.image1,arguments.image2)
+        score = compare_image(arguments.image1,arguments.image2)
+        logging.info("Indice di similarità: %0.4f", score)
 
     else:
         raise ValueError(f"Unknown action {arguments.action}")
