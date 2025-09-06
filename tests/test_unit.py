@@ -6,6 +6,7 @@ import hashlib
 from unittest.mock import MagicMock
 from PIL import Image
 from unittest.mock import patch, MagicMock
+import shutil
 
 def hash_file_txt(path, algo="md5"):
     h = hashlib.new(algo)
@@ -22,68 +23,78 @@ def hash_file_img(path, algo="md5"):
     return h.hexdigest()
 
 class TestClass:
-    def test_dicom_to_jpg_0(self):
-        input_dir = Path("tests/Data/DICOM_1/DICOM")
-        output_jpg = "tests/Data/DICOM_1/DICOM/OUTPUT/1-1.jpg"
+    def test_dicom_to_jpg_0(self, tmp_path):
+        dicom_file = Path("tests/Data/DICOM_1/DICOM/1-1.dcm")
         correct_jpg = "tests/Data/DICOM_1/SOL/1-1.jpg"
-        processing_dicom = dicom.DICOM(path = input_dir, anonymous = False)
+        output_jpg = tmp_path / "OUTPUT/1-1.jpg"
+        shutil.copy(dicom_file, tmp_path)
+
+        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
         hash_input = hash_file_img(output_jpg)
         hash_correct = hash_file_img(correct_jpg)
         assert hash_input == hash_correct
 
-    @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM","tests/Data/DICOM_2/DICOM/OUTPUT/1-2.jpg","tests/Data/DICOM_2/SOL/1-2.jpg"), ("tests/Data/DICOM_3/DICOM","tests/Data/DICOM_3/DICOM/OUTPUT/1-3.jpg","tests/Data/DICOM_3/SOL/1-3.jpg")])
-    def test_dicom_to_jpg_1(self,input,output,correct):
-        input_dir = Path(input)
-        processing_dicom = dicom.DICOM(path = input_dir, anonymous = False)
+    @pytest.mark.parametrize("input, output, correct", [("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.jpg","tests/Data/DICOM_2/SOL/1-2.jpg"),("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.jpg","tests/Data/DICOM_3/SOL/1-3.jpg")])
+    def test_dicom_to_jpg_1(self,input,output,correct, tmp_path):
+        shutil.copy(input, tmp_path)
+        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_img(output)
+        hash_input = hash_file_img(tmp_path / output)
         hash_correct = hash_file_img(correct)
         assert hash_input == hash_correct
 
-    def test_dicom_to_png_0(self):
-        input_dir = Path("tests/Data/DICOM_1/DICOM")
-        output_jpg = "tests/Data/DICOM_1/DICOM/OUTPUT/1-1.png"
-        correct_jpg = "tests/Data/DICOM_1/SOL/1-1.png"
-        processing_dicom = dicom.DICOM(path = input_dir, anonymous = False)
+    def test_dicom_to_png_0(self,tmp_path):
+        dicom_file = Path("tests/Data/DICOM_1/DICOM/1-1.dcm")
+        correct_png = "tests/Data/DICOM_1/SOL/1-1.png"
+        output_png = tmp_path / "OUTPUT/1-1.png"
+        shutil.copy(dicom_file, tmp_path)
+        
+        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_img(output_jpg)
-        hash_correct = hash_file_img(correct_jpg)
+        hash_input = hash_file_img(output_png)
+        hash_correct = hash_file_img(correct_png)
         assert hash_input == hash_correct
     
-    @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM","tests/Data/DICOM_2/DICOM/OUTPUT/1-2.png","tests/Data/DICOM_2/SOL/1-2.png"), ("tests/Data/DICOM_3/DICOM","tests/Data/DICOM_3/DICOM/OUTPUT/1-3.png","tests/Data/DICOM_3/SOL/1-3.png")])
-    def test_dicom_to_png_1(self,input,output,correct):
-        input_dir = Path(input)
-        processing_dicom = dicom.DICOM(path = input_dir, anonymous = False)
+    @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.png","tests/Data/DICOM_2/SOL/1-2.png"), ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.png","tests/Data/DICOM_3/SOL/1-3.png")])
+    def test_dicom_to_png_1(self,input,output,correct,tmp_path):
+        shutil.copy(input, tmp_path)
+        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_img(output)
+        hash_input = hash_file_img(tmp_path / output)
         hash_correct = hash_file_img(correct)
         assert hash_input == hash_correct
 
-    def test_txt_0(self):
-        input_dir = Path("tests/Data/DICOM_1/DICOM")
-        output_txt = "tests/Data/DICOM_1/DICOM/OUTPUT/1-1.txt"
+
+    def test_txt_0(self,tmp_path):
+        dicom_file = Path("tests/Data/DICOM_1/DICOM/1-1.dcm")
         correct_txt = "tests/Data/DICOM_1/SOL/1-1.txt"
-        processing_dicom = dicom.DICOM(path = input_dir, anonymous = False)
+        output_txt = tmp_path / "OUTPUT/1-1.txt"
+        shutil.copy(dicom_file, tmp_path)
+        
+        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
         hash_input = hash_file_txt(output_txt)
         hash_correct = hash_file_txt(correct_txt)
         assert hash_input == hash_correct
 
-    @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM","tests/Data/DICOM_2/DICOM/OUTPUT/1-2.txt","tests/Data/DICOM_2/SOL/1-2.txt"), ("tests/Data/DICOM_3/DICOM","tests/Data/DICOM_3/DICOM/OUTPUT/1-3.txt","tests/Data/DICOM_3/SOL/1-3.txt")])
-    def test_txt_1(self,input,output,correct):
-        input_dir = Path(input)
-        processing_dicom = dicom.DICOM(path = input_dir, anonymous = False)
+
+    @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.txt","tests/Data/DICOM_2/SOL/1-2.txt"), ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.txt","tests/Data/DICOM_3/SOL/1-3.txt")])
+    def test_txt_1(self,input,output,correct,tmp_path):
+        shutil.copy(input, tmp_path)
+        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_txt(output)
+        hash_input = hash_file_txt(tmp_path / output)
         hash_correct = hash_file_txt(correct)
         assert hash_input == hash_correct
 
-    def test_anonymous(self):
-        input_dir = Path("tests/Data/DICOM_4/DICOM")
-        output_txt = "tests/Data/DICOM_4/DICOM/OUTPUT/1-4.txt"
+    def test_anonymous(self, tmp_path):
+        dicom_file = Path("tests/Data/DICOM_4/DICOM/1-4.dcm")
         correct_txt = "tests/Data/DICOM_4/SOL/ANONYMUS_1-4.txt"
-        processing_dicom = dicom.DICOM(path = input_dir, anonymous = True)
+        output_txt = tmp_path / "OUTPUT/1-4.txt"
+        shutil.copy(dicom_file, tmp_path)
+
+        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = True)
         processing_dicom.processing()
         hash_input = hash_file_txt(output_txt)
         hash_correct = hash_file_txt(correct_txt)
@@ -96,18 +107,19 @@ class TestClass:
         res = dicom.compare_image(image1,image2)
         assert res == pytest.approx(float(score), rel=1e-4)
 
-    def test_acquire(self):
+
+    def test_acquire(self,tmp_path):
         source = "tests/Data/Acquire/Image1.wmv"
         expected = "tests/Data/Acquire/expected.png"
-        output = Path("tests/Data/Acquire/frame.png")
+        output = tmp_path / "frame.png"
+
         dicom.acquire(source=source,frame_name=output)
         h_expected = hash_file_img(expected)
         h_output = hash_file_img(output)
         assert h_expected == h_output
 
-
-    def test_processing_crea_gif(self):
-        tmp_path = Path("tests/Data/GIF")
+#SONO QUI
+    def test_processing_crea_gif(self, tmp_path):
         dcm_file = tmp_path / "test.dcm"
         dcm_file.write_text("FAKE DICOM CONTENT")
 
