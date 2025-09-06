@@ -6,7 +6,6 @@ tests/Data/DICOM_2/DICOM/OUTPUT/
 tests/Data/DICOM_3/DICOM/OUTPUT/
 tests/Data/DICOM_4/DICOM/OUTPUT/
 tests/Data/GIF/
-tests/test_integration.py
 # Created by https://www.toptal.com/developers/gitignore/api/python,macos,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,macos,visualstudiocode
 
