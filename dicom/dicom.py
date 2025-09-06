@@ -151,7 +151,7 @@ class DICOM():
 
                     ds = pydicom.dcmread(file_paths["dicom"])
 
-                    if flag_anonymous == "YES":
+                    if flag_anonymous:
                         logging.info("\t\t---Rendo il file: %s anonimo", file)
                         self._make_anonymus_dicom(ds,file_paths["anon"])
 
