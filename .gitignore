@@ -1,5 +1,12 @@
 examples/File_DICOM/Paziente1/ANONYMUS_1-6.dcm
 examples/File_DICOM/Paziente2/ANONYMUS_1-8.dcm
+tests/Data/Acquire/frame.png
+tests/Data/DICOM_1/DICOM/OUTPUT/
+tests/Data/DICOM_2/DICOM/OUTPUT/
+tests/Data/DICOM_3/DICOM/OUTPUT/
+tests/Data/DICOM_4/DICOM/OUTPUT/
+tests/Data/GIF/
+tests/test_integration.py
 # Created by https://www.toptal.com/developers/gitignore/api/python,macos,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,macos,visualstudiocode
 
