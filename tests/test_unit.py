@@ -27,26 +27,29 @@ def images_are_similar(img1_path, img2_path, threshold=0.99):
     return score >= threshold
 
 
-def texts_are_equal(file1, file2, ignore_whitespace=True):
+def texts_are_equal(file1, file2, ignore_whitespace=True, ignore_case=True):
     """
     Confronta due file di testo carattere per carattere.
     
     Parametri:
     - ignore_whitespace: se True ignora spazi e newline extra
+    - ignore_case: se True ignora maiuscole/minuscole
     """
     with open(file1, 'r', encoding='utf-8') as f1, open(file2, 'r', encoding='utf-8') as f2:
         content1 = f1.read()
         content2 = f2.read()
 
         if ignore_whitespace:
-            # rimuove tutti gli spazi e newline per un confronto "puro"
             content1 = ''.join(content1.split())
             content2 = ''.join(content2.split())
+
+        if ignore_case:
+            content1 = content1.lower()
+            content2 = content2.lower()
 
         if content1 == content2:
             return True
         else:
-            # opzionale: mostra dove differiscono
             min_len = min(len(content1), len(content2))
             for i in range(min_len):
                 if content1[i] != content2[i]:
@@ -55,6 +58,7 @@ def texts_are_equal(file1, file2, ignore_whitespace=True):
             if len(content1) != len(content2):
                 print(f"I file hanno lunghezze diverse: {len(content1)} vs {len(content2)}")
             return False
+
 
 
 
