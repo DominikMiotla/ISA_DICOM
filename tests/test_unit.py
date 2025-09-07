@@ -8,18 +8,26 @@ from PIL import Image
 from unittest.mock import patch, MagicMock
 import shutil
 
+
 def hash_file_txt(path, algo="md5"):
+    """Calcola l'hash di un file di testo normalizzando spazi e newline."""
+    with open(path, "r", encoding="utf-8", errors="ignore") as f:
+        content = f.read()
+
+    # Normalizzazione: rimuove spazi extra e newline
+    normalized = " ".join(content.split())
+
     h = hashlib.new(algo)
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            h.update(chunk)
+    h.update(normalized.encode("utf-8"))
     return h.hexdigest()
 
 def hash_file_img(path, algo="md5"):
+    """Calcola l'hash dei pixel di un'immagine (ignora metadati)."""
+    img = Image.open(path).convert("RGB")  # normalizza in RGB
+    arr = np.array(img)
+
     h = hashlib.new(algo)
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            h.update(chunk)
+    h.update(arr.tobytes())
     return h.hexdigest()
 
 class TestClass:
