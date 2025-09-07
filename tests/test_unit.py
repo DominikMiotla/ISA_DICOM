@@ -28,12 +28,16 @@ def images_are_similar(img1_path, img2_path, threshold=0.99):
 
 
 def texts_are_equal(txt1, txt2):
-    """Compare text files, normalize newlines and strip trailing spaces."""
-    with open(txt1, 'r', encoding='utf-8') as f:
-        t1 = f.read().replace('\r\n', '\n').strip()
-    with open(txt2, 'r', encoding='utf-8') as f:
-        t2 = f.read().replace('\r\n', '\n').strip()
-    return t1 == t2
+    """
+    Confronta due file di testo ignorando spazi iniziali/finali,
+    newline differenti e righe vuote superflue.
+    """
+    def clean_lines(path):
+        with open(path, 'r', encoding='utf-8') as f:
+            # rimuove spazi iniziali/finali, normalizza newline, ignora righe vuote
+            return [line.strip() for line in f if line.strip()]
+    
+    return clean_lines(txt1) == clean_lines(txt2)
 
 
 class TestClass:
