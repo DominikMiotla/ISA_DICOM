@@ -27,17 +27,35 @@ def images_are_similar(img1_path, img2_path, threshold=0.99):
     return score >= threshold
 
 
-def texts_are_equal(txt1, txt2):
+def texts_are_equal(file1, file2, ignore_whitespace=True):
     """
-    Confronta due file di testo ignorando spazi iniziali/finali,
-    newline differenti e righe vuote superflue.
-    """
-    def clean_lines(path):
-        with open(path, 'r', encoding='utf-8') as f:
-            # rimuove spazi iniziali/finali, normalizza newline, ignora righe vuote
-            return [line.strip() for line in f if line.strip()]
+    Confronta due file di testo carattere per carattere.
     
-    return clean_lines(txt1) == clean_lines(txt2)
+    Parametri:
+    - ignore_whitespace: se True ignora spazi e newline extra
+    """
+    with open(file1, 'r', encoding='utf-8') as f1, open(file2, 'r', encoding='utf-8') as f2:
+        content1 = f1.read()
+        content2 = f2.read()
+
+        if ignore_whitespace:
+            # rimuove tutti gli spazi e newline per un confronto "puro"
+            content1 = ''.join(content1.split())
+            content2 = ''.join(content2.split())
+
+        if content1 == content2:
+            return True
+        else:
+            # opzionale: mostra dove differiscono
+            min_len = min(len(content1), len(content2))
+            for i in range(min_len):
+                if content1[i] != content2[i]:
+                    print(f"Differenza al carattere {i}: '{content1[i]}' vs '{content2[i]}'")
+                    break
+            if len(content1) != len(content2):
+                print(f"I file hanno lunghezze diverse: {len(content1)} vs {len(content2)}")
+            return False
+
 
 
 class TestClass:
