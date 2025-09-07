@@ -28,6 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pylint pytest
         python -m pip install hypothesis
+        python -m pip install --upgrade build
         pip install .
 
     - name: Lint with pylint
@@ -37,7 +38,7 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
-        
+
     - name: Building app
       run: |
         python -m build
