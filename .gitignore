@@ -3,7 +3,7 @@ examples/File_DICOM/Paziente2/ANONYMUS_1-8.dcm
 examples/Acquire/frame_default.png
 examples/File_DICOM/Paziente1/OUTPUT
 examples/File_DICOM/Paziente2/OUTPUT
-
+clean_output.sh
 # Created by https://www.toptal.com/developers/gitignore/api/python,macos,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,macos,visualstudiocode
 
