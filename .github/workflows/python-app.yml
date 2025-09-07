@@ -28,6 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pylint pytest
         python -m pip install hypothesis
+        pip install .
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with pylint
       run: |
