@@ -9,25 +9,29 @@ from unittest.mock import patch, MagicMock
 import shutil
 
 
-def hash_file_txt(path, algo="md5"):
-    """Calcola l'hash di un file di testo normalizzando spazi e newline."""
-    with open(path, "r", encoding="utf-8", errors="ignore") as f:
-        content = f.read()
-
-    # Normalizzazione: rimuove spazi extra e newline
-    normalized = " ".join(content.split())
-
+def hash_file_img(path, algo="md5"):
+    """
+    Compute hash based on image pixel data (RGB), ignoring metadata.
+    This avoids differences caused by compression or metadata changes.
+    """
     h = hashlib.new(algo)
-    h.update(normalized.encode("utf-8"))
+    with Image.open(path) as img:
+        img = img.convert("RGB")  # Ensure consistent RGB format
+        h.update(img.tobytes())
     return h.hexdigest()
 
-def hash_file_img(path, algo="md5"):
-    """Calcola l'hash dei pixel di un'immagine (ignora metadati)."""
-    img = Image.open(path).convert("RGB")  # normalizza in RGB
-    arr = np.array(img)
 
+def hash_file_txt(path, algo="md5"):
+    """
+    Compute hash on text with normalized line endings and stripped whitespace.
+    This avoids differences caused by platform-specific newlines or extra spaces.
+    """
     h = hashlib.new(algo)
-    h.update(arr.tobytes())
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+    # Normalize line endings and strip trailing spaces
+    normalized = "\n".join(line.strip() for line in content.splitlines())
+    h.update(normalized.encode("utf-8"))
     return h.hexdigest()
 
 class TestClass:
