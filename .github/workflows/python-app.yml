@@ -33,3 +33,7 @@ jobs:
     - name: Lint with pylint
       run: |
         pylint dicom/dicom.py --exit-zero
+
+    - name: Test with pytest
+      run: |
+        pytest
