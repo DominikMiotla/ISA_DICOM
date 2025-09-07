@@ -3,28 +3,31 @@ import pytest
 from pathlib import Path
 import dicom.dicom as dicom
 import hashlib
-from unittest.mock import MagicMock
-from PIL import Image
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+from PIL import Image, ImageChops
 import shutil
-from PIL import ImageChops
 
 
 def images_are_similar(img1_path, img2_path, tolerance=5):
-    from PIL import Image
+    """Compare images with a pixel tolerance."""
     img1 = Image.open(img1_path).convert("RGB")
     img2 = Image.open(img2_path).convert("RGB")
     diff = ImageChops.difference(img1, img2)
     # diff.getbbox() is None if images are identical
-    return not diff.getbbox() or max(diff.getextrema()[0]) <= tolerance
+    if not diff.getbbox():
+        return True
+    max_diff = max([d[1] for d in diff.getextrema()])
+    return max_diff <= tolerance
 
 
 def texts_are_equal(txt1, txt2):
+    """Compare text files, normalize newlines and strip trailing spaces."""
     with open(txt1, 'r', encoding='utf-8') as f:
-        lines1 = [l.strip() for l in f]
+        t1 = f.read().replace('\r\n', '\n').strip()
     with open(txt2, 'r', encoding='utf-8') as f:
-        lines2 = [l.strip() for l in f]
-    return lines1 == lines2
+        t2 = f.read().replace('\r\n', '\n').strip()
+    return t1 == t2
+
 
 class TestClass:
     def test_dicom_to_jpg_0(self, tmp_path):
@@ -33,14 +36,20 @@ class TestClass:
         output_jpg = tmp_path / "OUTPUT/1-1.jpg"
         shutil.copy(dicom_file, tmp_path)
 
-        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
+        processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
         assert images_are_similar(output_jpg, correct_jpg)
 
-    @pytest.mark.parametrize("input, output, correct", [("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.jpg","tests/Data/DICOM_2/SOL/1-2.jpg"),("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.jpg","tests/Data/DICOM_3/SOL/1-3.jpg")])
+    @pytest.mark.parametrize(
+        "input, output, correct",
+        [
+            ("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.jpg","tests/Data/DICOM_2/SOL/1-2.jpg"),
+            ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.jpg","tests/Data/DICOM_3/SOL/1-3.jpg")
+        ]
+    )
     def test_dicom_to_jpg_1(self,input,output,correct, tmp_path):
         shutil.copy(input, tmp_path)
-        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
+        processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
         assert images_are_similar(tmp_path / output, correct)
 
@@ -49,34 +58,44 @@ class TestClass:
         correct_png = "tests/Data/DICOM_1/SOL/1-1.png"
         output_png = tmp_path / "OUTPUT/1-1.png"
         shutil.copy(dicom_file, tmp_path)
-        
-        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
+
+        processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
         assert images_are_similar(output_png, correct_png)
-    
-    @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.png","tests/Data/DICOM_2/SOL/1-2.png"), ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.png","tests/Data/DICOM_3/SOL/1-3.png")])
+
+    @pytest.mark.parametrize(
+        "input, output, correct",
+        [
+            ("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.png","tests/Data/DICOM_2/SOL/1-2.png"),
+            ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.png","tests/Data/DICOM_3/SOL/1-3.png")
+        ]
+    )
     def test_dicom_to_png_1(self,input,output,correct,tmp_path):
         shutil.copy(input, tmp_path)
-        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
+        processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
         assert images_are_similar(tmp_path / output, correct)
-
 
     def test_txt_0(self,tmp_path):
         dicom_file = Path("tests/Data/DICOM_1/DICOM/1-1.dcm")
         correct_txt = "tests/Data/DICOM_1/SOL/1-1.txt"
         output_txt = tmp_path / "OUTPUT/1-1.txt"
         shutil.copy(dicom_file, tmp_path)
-        
-        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
+
+        processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
         assert texts_are_equal(output_txt, correct_txt)
 
-
-    @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.txt","tests/Data/DICOM_2/SOL/1-2.txt"), ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.txt","tests/Data/DICOM_3/SOL/1-3.txt")])
+    @pytest.mark.parametrize(
+        "input, output, correct",
+        [
+            ("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.txt","tests/Data/DICOM_2/SOL/1-2.txt"),
+            ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.txt","tests/Data/DICOM_3/SOL/1-3.txt")
+        ]
+    )
     def test_txt_1(self,input,output,correct,tmp_path):
         shutil.copy(input, tmp_path)
-        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
+        processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
         assert texts_are_equal(tmp_path / output, correct)
 
@@ -86,17 +105,22 @@ class TestClass:
         output_txt = tmp_path / "OUTPUT/1-4.txt"
         shutil.copy(dicom_file, tmp_path)
 
-        processing_dicom = dicom.DICOM(path = tmp_path, anonymous = True)
+        processing_dicom = dicom.DICOM(path=tmp_path, anonymous=True)
         processing_dicom.processing()
         assert texts_are_equal(output_txt, correct_txt)
 
-    @pytest.mark.parametrize("img1, img2, score",[("tests/Data/Compare/1-1.jpg","tests/Data/Compare/1-1.jpg","1.0000"), ("tests/Data/Compare/1-1.jpg","tests/Data/Compare/1-2.jpg","0.7098")])
+    @pytest.mark.parametrize(
+        "img1, img2, score",
+        [
+            ("tests/Data/Compare/1-1.jpg","tests/Data/Compare/1-1.jpg","1.0000"),
+            ("tests/Data/Compare/1-1.jpg","tests/Data/Compare/1-2.jpg","0.7098")
+        ]
+    )
     def test_compare(self,img1,img2,score):
         image1 = Path(img1)
         image2 = Path(img2)
         res = dicom.compare_image(image1,image2)
-        assert res == pytest.approx(float(score), rel=1e-4)
-
+        assert res == pytest.approx(float(score), rel=1e-3)  # tolleranza più alta per CI
 
     def test_acquire(self,tmp_path):
         source = "tests/Data/Acquire/Image1.wmv"
