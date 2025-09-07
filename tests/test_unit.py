@@ -6,18 +6,25 @@ import hashlib
 from unittest.mock import MagicMock, patch
 from PIL import Image, ImageChops
 import shutil
+from skimage.metrics import structural_similarity as ssim
 
+def images_are_similar(img1_path, img2_path, threshold=0.99):
+    """
+    Confronta due immagini usando l'ISS (Structural Similarity Index).
 
-def images_are_similar(img1_path, img2_path, tolerance=5):
-    """Compare images with a pixel tolerance."""
-    img1 = Image.open(img1_path).convert("RGB")
-    img2 = Image.open(img2_path).convert("RGB")
-    diff = ImageChops.difference(img1, img2)
-    # diff.getbbox() is None if images are identical
-    if not diff.getbbox():
-        return True
-    max_diff = max([d[1] for d in diff.getextrema()])
-    return max_diff <= tolerance
+    Args:
+        img1_path (str / Path): percorso della prima immagine
+        img2_path (str / Path): percorso della seconda immagine
+        threshold (float): soglia minima di similarità (0-1)
+
+    Returns:
+        bool: True se le immagini sono simili sopra la soglia, False altrimenti
+    """
+    img1 = np.array(Image.open(img1_path).convert("L"))  # converti in scala di grigi
+    img2 = np.array(Image.open(img2_path).convert("L"))
+
+    score, diff = ssim(img1, img2, full=True)
+    return score >= threshold
 
 
 def texts_are_equal(txt1, txt2):
