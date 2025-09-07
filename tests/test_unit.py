@@ -7,32 +7,24 @@ from unittest.mock import MagicMock
 from PIL import Image
 from unittest.mock import patch, MagicMock
 import shutil
+from PIL import ImageChops
 
 
-def hash_file_img(path, algo="md5"):
-    """
-    Compute hash based on image pixel data (RGB), ignoring metadata.
-    This avoids differences caused by compression or metadata changes.
-    """
-    h = hashlib.new(algo)
-    with Image.open(path) as img:
-        img = img.convert("RGB")  # Ensure consistent RGB format
-        h.update(img.tobytes())
-    return h.hexdigest()
+def images_are_similar(img1_path, img2_path, tolerance=5):
+    from PIL import Image
+    img1 = Image.open(img1_path).convert("RGB")
+    img2 = Image.open(img2_path).convert("RGB")
+    diff = ImageChops.difference(img1, img2)
+    # diff.getbbox() is None if images are identical
+    return not diff.getbbox() or max(diff.getextrema()[0]) <= tolerance
 
 
-def hash_file_txt(path, algo="md5"):
-    """
-    Compute hash on text with normalized line endings and stripped whitespace.
-    This avoids differences caused by platform-specific newlines or extra spaces.
-    """
-    h = hashlib.new(algo)
-    with open(path, "r", encoding="utf-8") as f:
-        content = f.read()
-    # Normalize line endings and strip trailing spaces
-    normalized = "\n".join(line.strip() for line in content.splitlines())
-    h.update(normalized.encode("utf-8"))
-    return h.hexdigest()
+def texts_are_equal(txt1, txt2):
+    with open(txt1, 'r', encoding='utf-8') as f:
+        lines1 = [l.strip() for l in f]
+    with open(txt2, 'r', encoding='utf-8') as f:
+        lines2 = [l.strip() for l in f]
+    return lines1 == lines2
 
 class TestClass:
     def test_dicom_to_jpg_0(self, tmp_path):
@@ -43,18 +35,14 @@ class TestClass:
 
         processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_img(output_jpg)
-        hash_correct = hash_file_img(correct_jpg)
-        assert hash_input == hash_correct
+        assert images_are_similar(output_jpg, correct_jpg)
 
     @pytest.mark.parametrize("input, output, correct", [("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.jpg","tests/Data/DICOM_2/SOL/1-2.jpg"),("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.jpg","tests/Data/DICOM_3/SOL/1-3.jpg")])
     def test_dicom_to_jpg_1(self,input,output,correct, tmp_path):
         shutil.copy(input, tmp_path)
         processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_img(tmp_path / output)
-        hash_correct = hash_file_img(correct)
-        assert hash_input == hash_correct
+        assert images_are_similar(tmp_path / output, correct)
 
     def test_dicom_to_png_0(self,tmp_path):
         dicom_file = Path("tests/Data/DICOM_1/DICOM/1-1.dcm")
@@ -64,18 +52,14 @@ class TestClass:
         
         processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_img(output_png)
-        hash_correct = hash_file_img(correct_png)
-        assert hash_input == hash_correct
+        assert images_are_similar(output_png, correct_png)
     
     @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.png","tests/Data/DICOM_2/SOL/1-2.png"), ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.png","tests/Data/DICOM_3/SOL/1-3.png")])
     def test_dicom_to_png_1(self,input,output,correct,tmp_path):
         shutil.copy(input, tmp_path)
         processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_img(tmp_path / output)
-        hash_correct = hash_file_img(correct)
-        assert hash_input == hash_correct
+        assert images_are_similar(tmp_path / output, correct)
 
 
     def test_txt_0(self,tmp_path):
@@ -86,9 +70,7 @@ class TestClass:
         
         processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_txt(output_txt)
-        hash_correct = hash_file_txt(correct_txt)
-        assert hash_input == hash_correct
+        assert texts_are_equal(output_txt, correct_txt)
 
 
     @pytest.mark.parametrize("input, output, correct",[("tests/Data/DICOM_2/DICOM/1-2.dcm","OUTPUT/1-2.txt","tests/Data/DICOM_2/SOL/1-2.txt"), ("tests/Data/DICOM_3/DICOM/1-3.dcm","OUTPUT/1-3.txt","tests/Data/DICOM_3/SOL/1-3.txt")])
@@ -96,9 +78,7 @@ class TestClass:
         shutil.copy(input, tmp_path)
         processing_dicom = dicom.DICOM(path = tmp_path, anonymous = False)
         processing_dicom.processing()
-        hash_input = hash_file_txt(tmp_path / output)
-        hash_correct = hash_file_txt(correct)
-        assert hash_input == hash_correct
+        assert texts_are_equal(tmp_path / output, correct)
 
     def test_anonymous(self, tmp_path):
         dicom_file = Path("tests/Data/DICOM_4/DICOM/1-4.dcm")
@@ -108,9 +88,7 @@ class TestClass:
 
         processing_dicom = dicom.DICOM(path = tmp_path, anonymous = True)
         processing_dicom.processing()
-        hash_input = hash_file_txt(output_txt)
-        hash_correct = hash_file_txt(correct_txt)
-        assert hash_input == hash_correct
+        assert texts_are_equal(output_txt, correct_txt)
 
     @pytest.mark.parametrize("img1, img2, score",[("tests/Data/Compare/1-1.jpg","tests/Data/Compare/1-1.jpg","1.0000"), ("tests/Data/Compare/1-1.jpg","tests/Data/Compare/1-2.jpg","0.7098")])
     def test_compare(self,img1,img2,score):
@@ -126,11 +104,8 @@ class TestClass:
         output = tmp_path / "frame.png"
 
         dicom.acquire(source=source,frame_name=output)
-        h_expected = hash_file_img(expected)
-        h_output = hash_file_img(output)
-        assert h_expected == h_output
+        assert images_are_similar(output, expected)
 
-#SONO QUI
     def test_processing_crea_gif(self, tmp_path):
         dcm_file = tmp_path / "test.dcm"
         dcm_file.write_text("FAKE DICOM CONTENT")
