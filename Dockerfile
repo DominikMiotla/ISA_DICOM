@@ -1,3 +1,4 @@
+# NO multi-stage Docker build:
 FROM python
 
 RUN apt-get update && apt-get install -y \
