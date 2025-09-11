@@ -22,7 +22,7 @@ pip install .
 Or, if you want to install it in editable/development mode (useful for modifying the code):
 
 ```bash
-python3 -m pip install -e .
+python -m pip install -e .
 ```
 
 # Usage
@@ -55,15 +55,23 @@ dicom processing --dicom_dir path/to/dicom_folder --anonymous
 
 Captures a frame from a video device (e.g., an ultrasound machine) and saves it as a PNG image. The program assumes that a video capture card is connected to the computer and that the device can be accessed through Linux operating system file descriptors (FDs)
 ```bash
-dicom.py acquire --fd 0 --output frame.png
+dicom acquire --fd 0 --output frame.png
 ```
 - `fd`: File descriptor of the device.
 - `output`: Path to save the captured frame (default: frame_default.png).
 
+or allows acquiring a frame from a locally saved video
+```bash
+dicom acquire --video path --output frame.png
+```
+- `video`: path video.
+- `output`: Path to save the captured frame (default: frame_default.png).
+
+
 ## 3. Compare two images
 Compare two images using the Structural Similarity Index (SSIM):
 ```bash
-python dicom.py compare --image1 path1.png --image2 path.png
+dicom compare --image1 path1.png --image2 path.png
 ```
 - `image1`: Path to the first image.
 - `image2`: Path to the second image.
@@ -89,7 +97,7 @@ dicom processing --dicom_dir data --anonymous
 ```bash
 dicom acquire --fd 0 --output frame.png
 ```
-
+or
 ```bash
 dicom acquire --video <path_video> --output frame.png
 ```
@@ -99,9 +107,9 @@ dicom acquire --video <path_video> --output frame.png
 dicom compare --image1 frame1.png --image2 frame2.png
 ```
 
-# Esecuzione con Docker
-L’applicazione DICOM è containerizzata in un’immagine Docker.  
-I dati possono essere condivisi con il container tramite 
+# Execution with Docker
+The DICOM application is containerized in a Docker image.
+Data can be shared with the container via
 
 ```bash
 docker container run -it -v $PWD/examples:/home/dicom dicom:isa bash
