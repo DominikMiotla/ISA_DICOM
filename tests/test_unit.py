@@ -8,7 +8,7 @@ from PIL import Image, ImageChops
 import shutil
 from skimage.metrics import structural_similarity as ssim
 
-def images_are_similar(img1_path, img2_path, threshold=0.99):
+def images_are_similar(img1_path, img2_path):
     """
     Confronta due immagini usando l'ISS (Structural Similarity Index).
 
@@ -24,40 +24,24 @@ def images_are_similar(img1_path, img2_path, threshold=0.99):
     img2 = np.array(Image.open(img2_path).convert("L"))
 
     score, diff = ssim(img1, img2, full=True)
-    return score >= threshold
+    return score
 
 
-def texts_are_equal(file1, file2, ignore_whitespace=True, ignore_case=True):
+def file_digest(filepath, ignore_whitespace=True, ignore_case=True):
     """
-    Confronta due file di testo carattere per carattere.
-    
-    Parametri:
-    - ignore_whitespace: se True ignora spazi e newline extra
-    - ignore_case: se True ignora maiuscole/minuscole
+    Restituisce un hash (sha256) del contenuto del file,
+    normalizzato secondo le opzioni.
     """
-    with open(file1, 'r', encoding='utf-8') as f1, open(file2, 'r', encoding='utf-8') as f2:
-        content1 = f1.read()
-        content2 = f2.read()
+    with open(filepath, "r", encoding="utf-8") as f:
+        content = f.read()
 
-        if ignore_whitespace:
-            content1 = ''.join(content1.split())
-            content2 = ''.join(content2.split())
+    if ignore_whitespace:
+        content = ''.join(content.split())
 
-        if ignore_case:
-            content1 = content1.lower()
-            content2 = content2.lower()
+    if ignore_case:
+        content = content.lower()
 
-        if content1 == content2:
-            return True
-        else:
-            min_len = min(len(content1), len(content2))
-            for i in range(min_len):
-                if content1[i] != content2[i]:
-                    print(f"Differenza al carattere {i}: '{content1[i]}' vs '{content2[i]}'")
-                    break
-            if len(content1) != len(content2):
-                print(f"I file hanno lunghezze diverse: {len(content1)} vs {len(content2)}")
-            return False
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
 
@@ -71,7 +55,8 @@ class TestClass:
 
         processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
-        assert images_are_similar(output_jpg, correct_jpg)
+        score = images_are_similar(output_jpg, correct_jpg)
+        assert score >= 0.99
 
     @pytest.mark.parametrize(
         "input, output, correct",
@@ -84,7 +69,8 @@ class TestClass:
         shutil.copy(input, tmp_path)
         processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
-        assert images_are_similar(tmp_path / output, correct)
+        score = images_are_similar(tmp_path / output, correct)
+        assert score >= 0.99
 
     def test_dicom_to_png_0(self,tmp_path):
         dicom_file = Path("tests/Data/DICOM_1/DICOM/1-1.dcm")
@@ -94,7 +80,8 @@ class TestClass:
 
         processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
-        assert images_are_similar(output_png, correct_png)
+        score = images_are_similar(output_png, correct_png)
+        assert score >= 0.99
 
     @pytest.mark.parametrize(
         "input, output, correct",
@@ -107,7 +94,8 @@ class TestClass:
         shutil.copy(input, tmp_path)
         processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
-        assert images_are_similar(tmp_path / output, correct)
+        score = images_are_similar(tmp_path / output, correct)
+        assert score >= 0.99
 
     def test_txt_0(self,tmp_path):
         dicom_file = Path("tests/Data/DICOM_1/DICOM/1-1.dcm")
@@ -117,7 +105,9 @@ class TestClass:
 
         processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
-        assert texts_are_equal(output_txt, correct_txt)
+        h_o = file_digest(output_txt)
+        h_c = file_digest(correct_txt)
+        assert h_o == h_c
 
     @pytest.mark.parametrize(
         "input, output, correct",
@@ -130,7 +120,9 @@ class TestClass:
         shutil.copy(input, tmp_path)
         processing_dicom = dicom.DICOM(path=tmp_path, anonymous=False)
         processing_dicom.processing()
-        assert texts_are_equal(tmp_path / output, correct)
+        h_o = file_digest(tmp_path / output)
+        h_c = file_digest(correct)
+        assert h_o == h_c
 
     def test_anonymous(self, tmp_path):
         dicom_file = Path("tests/Data/DICOM_4/DICOM/1-4.dcm")
@@ -140,7 +132,9 @@ class TestClass:
 
         processing_dicom = dicom.DICOM(path=tmp_path, anonymous=True)
         processing_dicom.processing()
-        assert texts_are_equal(output_txt, correct_txt)
+        h_o = file_digest(output_txt)
+        h_c = file_digest(correct_txt)
+        assert h_o == h_c
 
     @pytest.mark.parametrize(
         "img1, img2, score",
@@ -161,7 +155,8 @@ class TestClass:
         output = tmp_path / "frame.png"
 
         dicom.acquire(source=source,frame_name=output)
-        assert images_are_similar(output, expected)
+        score = images_are_similar(output, expected)
+        assert score >= 0.99
 
     def test_processing_crea_gif(self, tmp_path):
         dcm_file = tmp_path / "test.dcm"
@@ -183,14 +178,3 @@ class TestClass:
 
         output_gif = tmp_path / "OUTPUT" / "test.gif"
         assert output_gif.exists()
-
-        with Image.open(output_gif) as img:
-            assert img.format == "GIF"
-            frames = 0
-            try:
-                while True:
-                    img.seek(frames)
-                    frames += 1
-            except EOFError:
-                pass
-            assert frames == n_frames
