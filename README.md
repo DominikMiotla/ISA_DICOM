@@ -89,7 +89,20 @@ dicom processing --dicom_dir data --anonymous
 ```bash
 dicom acquire --fd 0 --output frame.png
 ```
+
+```bash
+dicom acquire --video <path_video> --output frame.png
+```
+
 ### 3: Compare two images:
 ```bash
 dicom compare --image1 frame1.png --image2 frame2.png
+```
+
+# Esecuzione con Docker
+L’applicazione DICOM è containerizzata in un’immagine Docker.  
+I dati possono essere condivisi con il container tramite 
+
+```bash
+docker container run -it -v $PWD/examples:/home/dicom dicom:isa bash
 ```
